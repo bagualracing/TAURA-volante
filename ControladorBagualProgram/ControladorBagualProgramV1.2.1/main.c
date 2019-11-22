@@ -111,34 +111,44 @@ char ReadPortDState()
 }
 
 ISR (PCINT1_vect)
-{//interrupcao em portas C
+{//interrupcao de porta C
 	char i;
-	for(i = 0; i < 3; i++)
+	//se o sensor de freio estiver ligado, desliga todas as fases do sistema
+	if(PINC & (1<<3) || PINC & (1<<4))
 	{
-		if((PINC & (1 << i)) != (s_lastPortDstate & (1 << i)))	//compara estado atual PINCn com estado passado
+		s_phaseTurnedOff = 0;
+		s_phaseTurnedOn = 0;
+	}
+	else
+	{
+		for(i = 0; i < 3; i++)
 		{
-			if((PINC & (1 << i)) > 0)
+			if((PINC & (1 << i)) != (s_lastPortDstate & (1 << i)))	//compara estado atual PINCn com estado passado
 			{
-				int PhaseToSetFloat = i - 1;
-				if(PhaseToSetFloat<0)
+				if((PINC & (1 << i)) > 0)
 				{
-					PhaseToSetFloat = 2;
+					int PhaseToSetFloat = i - 1;
+					if(PhaseToSetFloat<0)
+					{
+						PhaseToSetFloat = 2;
+					}
+					s_phaseTurnedOn &= ~(1 << (PhaseToSetFloat));		//indica que a fase referente ao sensor hall deve ir para Float
+					s_phaseTurnedOn |= (1 << (i));						//indica que a fase referente ao sensor hall deve ir para High
 				}
-				s_phaseTurnedOn &= ~(1 << (PhaseToSetFloat));		//indica que a fase referente ao sensor hall deve ir para Float
-				s_phaseTurnedOn |= (1 << (i));						//indica que a fase referente ao sensor hall deve ir para High
-			}
-			else
-			{
-				int PhaseToSetFloat = i - 1;
-				if(PhaseToSetFloat<0)
+				else
 				{
-					PhaseToSetFloat = 2;
+					int PhaseToSetFloat = i - 1;
+					if(PhaseToSetFloat<0)
+					{
+						PhaseToSetFloat = 2;
+					}
+					s_phaseTurnedOff  &= ~(1 << (PhaseToSetFloat));		//indica que a fase referente ao sensor hall deve ir para Float
+					s_phaseTurnedOff  |= (1 << (i));						//indica que a fase referente ao sensor hall deve ir para High
+					
 				}
-				s_phaseTurnedOff  &= ~(1 << (PhaseToSetFloat));		//indica que a fase referente ao sensor hall deve ir para Float
-				s_phaseTurnedOff  |= (1 << (i));						//indica que a fase referente ao sensor hall deve ir para High
-							
 			}
-		}
+	}
+	
 	}
 	s_lastPortDstate = PINC;
 }
@@ -191,7 +201,7 @@ void InitAtmega()
  	PORTD = 0;					// inicia a Porta D toda zerada
 
 	PCICR |= 1 << PCIE1;		// Habilita interrupção da porta C
-	PCMSK1 |=( (1 << PCINT8) | (1 << PCINT9) |(1 << PCINT10) );              // Mask indicando que apenas PC0, PC1 e PC2 causarão interrupção
+	PCMSK1 |=( (1 << PCINT8) | (1 << PCINT9) |(1 << PCINT10) |(1 << PCINT11) |(1 << PCINT12));              // Mask indicando que apenas PC0, PC1, PC2, PC3 e PC4  causarão interrupção
 
 	initPWMTimer();				//inicia PWM			
 	initADC();					//inicia conversor analogico digital
