@@ -55,7 +55,7 @@ ISR(TIMER1_COMPA_vect){
 	
 	if(s_AnalogValue != 0)
 	{
-		PORTD |= s_phaseTurnedOff;									  //Seta .os valores LOW da ponte H
+		PORTD |= s_phaseTurnedOff;                                  //Seta .os valores LOW da ponte H
 		switch(s_phaseTurnedOff)
 		{
 			case 1:
@@ -70,10 +70,13 @@ ISR(TIMER1_COMPA_vect){
 				PORTD &= ~((1 << PIND3)) & ~((1 << PIND5));
 				PORTD |= (1 << PIND7);
 				break;
+			default:
+				//Seta led vermelho
+				break;
 		}
 	
 
-		switch (s_phaseTurnedOn)
+		switch (s_phaseTurnedOn)                                     //Seta os valores HIGH na ponte H
 		{
 			case 1:
 				PORTD &= ~((1 << PIND4)) & ~((1 << PIND6));
@@ -89,6 +92,8 @@ ISR(TIMER1_COMPA_vect){
 				break;
 			default:
 				PORTD &= ~((1 << PINC6)) & ~((1 << PINC4))& ~((1 << PINC2));
+				//Seta led vermelho
+				break;
 			
 		}
 	
@@ -99,6 +104,7 @@ ISR (PCINT1_vect)
 {//interrupcao de porta C
 	char i;
 	//se o sensor de freio estiver ligado, desliga todas as fases do sistema
+	
 	if(PINC & (1<<3) || PINC & (1<<4))
 	{
 		s_phaseTurnedOff = 0;
@@ -197,6 +203,12 @@ int main(void)
 {
     InitAtmega();				//Setup do ATmega
 	
+    if(PINC & 0)
+    {
+	//YellowLed_on
+	while(PINC & 0);
+    }	
+    
     while (1) 
     {
 	while ( (ADCSRA & (1 << ADSC)) );        // Espera ADC terminar a conversão
